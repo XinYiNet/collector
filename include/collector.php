@@ -14,6 +14,10 @@ final class collector {
     private  static $hooks = array();
 	public $user_name;
 
+    public function __construct(){
+         new collector_vo($this, base_vo::BOUND_MERGE);
+    }
+
     /**
      * 注册一个采集器
      * @param string $class_name

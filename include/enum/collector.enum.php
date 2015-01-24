@@ -9,5 +9,6 @@ class collector_enum {
 
     const IS_BUYER  =   1;
     const IS_SELLER =   1;
+    const IS_TMALL  =   1;
 
 }

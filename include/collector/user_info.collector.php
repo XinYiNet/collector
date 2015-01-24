@@ -31,7 +31,6 @@ class user_info_collector extends base_collector {
             throw(new Excption('服务器错误'));
         }
 
-        echo $this->curl->response;
         //获取month_id和rate_url
         if(preg_match('/http\:\/\/rate\.taobao\.com\/user\-rate\-(\w+)\.htm/', $this->curl->response, $matches)){
             $this->collector->rate_url = $matches[0];
@@ -62,10 +61,16 @@ class user_info_collector extends base_collector {
             $this->collector->auth_title 	 = $matches[2];
         }
 
-
+        //判断是否天猫商家
+        if(preg_match('/<input type="hidden" name="isB2C" id="isB2C" value="(\w+)" \/>/', $this->curl->response, $matches)){
+             if($matches[1] == 'true'){
+				 $this->collector->is_tmall   =   collector_enum::IS_TMALL;
+                 $this->collector->is_seller  =   collector_enum::IS_SELLER;
+             }
+        }
 
         //获取是否是卖家
-        if(preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
+        if($this->collector->is_seller || preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
             $this->collector->is_seller = collector_enum::IS_SELLER;
             $this->collector->shop = new stdClass();
             $this->collector->shop->shop_id   = $matches[1];
