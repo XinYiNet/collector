@@ -36,3 +36,10 @@ function set_encode($string , $encode = 'utf-8', $decode = 'gbk'){
 	
 }
 
+function strip_array_tag(array $arr){
+	foreach($arr as $key => $val){
+		$arr[$key] = trim(strip_tags($val));
+	}
+	return $arr;
+}
+

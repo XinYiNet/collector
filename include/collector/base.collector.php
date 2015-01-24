@@ -29,7 +29,11 @@ abstract class base_collector{
      */
     final public function __invoke(collector &$collector){
 	   $this->collector = &$collector;
-       return $this->start();
+	   try{
+			return $this->start();
+	   }catch(Exception $e){
+			echo $e->getMessge();
+	   }
     }
 
 
