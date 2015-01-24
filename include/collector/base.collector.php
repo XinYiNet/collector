@@ -31,7 +31,7 @@ abstract class base_collector{
 	   try{
 			return $this->start();
 	   }catch(Exception $e){
-			echo $e->getMessge();
+           echo $e->getMessage();
 	   }
     }
 

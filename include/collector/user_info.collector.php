@@ -16,9 +16,10 @@ class user_info_collector extends base_collector {
     private $get_user_profile_api = 'member1.taobao.com/member/user_profile.jhtml?user_id=';
 
 
-    /** 开始采集
+    /**
      * @return $this|mixed
      * @throws ErrorException
+     * @throws Exception
      * @throws Excption
      */
     protected  function start(){
@@ -30,6 +31,7 @@ class user_info_collector extends base_collector {
             throw(new Excption('服务器错误'));
         }
 
+        echo $this->curl->response;
         //获取month_id和rate_url
         if(preg_match('/http\:\/\/rate\.taobao\.com\/user\-rate\-(\w+)\.htm/', $this->curl->response, $matches)){
             $this->collector->rate_url = $matches[0];
@@ -38,6 +40,11 @@ class user_info_collector extends base_collector {
 
         //再请求rate_url
         $this->curl->get($this->collector->rate_url);
+
+        if(!$this->curl->response){
+            throw(new Exception('抱歉，出问题了：'.$this->collector->rate_url) );
+        }
+
         //删除换行符
         $this->curl->response= str_replace(array("\r\n", "\r", "\n"), "", $this->curl->response);
         //编码转换为UTF-8
