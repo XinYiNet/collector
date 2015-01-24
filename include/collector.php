@@ -15,6 +15,7 @@ final class collector {
 	public $user_name;
 
     /**
+     * 注册一个采集器
      * @param string $class_name
      * @return true
      */
@@ -26,8 +27,9 @@ final class collector {
     }
 
     /**
-     * @param user_name_vo $user_name_vo
-     * @return array
+     * 魔术方法-循环执行采集器
+     * @param $user_name
+     * @return $this
      */
     public function __invoke($user_name){
 		$this->user_name = $user_name;

@@ -13,5 +13,6 @@ $collector = new collector();
 $user_name = $_GET['user_name'] ? $_GET['user_name'] : '新依网络';
 $collector($user_name);
 print_r($collector);
+
 echo json_encode($collector);
 exit;

@@ -11,21 +11,20 @@
 abstract class base_collector{
 	protected $collector = null;
 	protected $curl = null;
-	
+
+
 	public function __construct(){
 		$this->curl = new Curl();
 	}
+
     /**
-     * @param $user_name
-     * @param $collector
      * @return mixed
      */
     abstract protected function start();
 
+
     /**
-     * @param $user_name
-     * @param $collector
-     * @return mixed
+     * @param collector $collector
      */
     final public function __invoke(collector &$collector){
 	   $this->collector = &$collector;

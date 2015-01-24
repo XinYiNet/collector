@@ -9,138 +9,145 @@
  * Class user_info_collector
  */
 class user_info_collector extends base_collector {
-	
-	private $get_user_id_api = 'www.dasoke.com/ajax/get/rate/';
-	private $get_user_profile_api = 'member1.taobao.com/member/user_profile.jhtml?user_id=';
+
+
+    private $get_user_id_api = 'www.dasoke.com/ajax/get/rate/';
+
+    private $get_user_profile_api = 'member1.taobao.com/member/user_profile.jhtml?user_id=';
+
+
+    /** å¼€å§‹é‡‡é›†
+     * @return $this|mixed
+     * @throws ErrorException
+     * @throws Excption
+     */
+    protected  function start(){
+        //å…ˆæ ¹æ®ç”¨æˆ·åè·å–month_idå’Œrate_url
+        $this->curl->get($this->get_user_id_api, array(
+            'username'	=>	$this->collector->user_name
+        ));
+        if(!$this->curl->response){
+            throw(new Excption('æœåŠ¡å™¨é”™è¯¯'));
+        }
+
+        //è·å–month_idå’Œrate_url
+        if(preg_match('/http\:\/\/rate\.taobao\.com\/user\-rate\-(\w+)\.htm/', $this->curl->response, $matches)){
+            $this->collector->rate_url = $matches[0];
+            $this->collector->month_id = $matches[1];
+        }
+
+        //å†è¯·æ±‚rate_url
+        $this->curl->get($this->collector->rate_url);
+        //åˆ é™¤æ¢è¡Œç¬¦
+        $this->curl->response= str_replace(array("\r\n", "\r", "\n"), "", $this->curl->response);
+        //ç¼–ç è½¬æ¢ä¸ºUTF-8
+        $this->curl->response = set_encode($this->curl->response, 'gbk', 'utf-8');
+
+        //è·å–é•¿IDå’Œprofile_url
+        if(preg_match('/http\:\/\/member1\.taobao\.com\/member\/user-profile-([0-9a-z]{32})\.htm/', $this->curl->response, $matches)){
+            $this->collector->profile_url = $matches[0];
+            $this->collector->long_id 	  = $matches[1];
+        }
+
+        //è·å–è®¤è¯æƒ…å†µ
+        if(preg_match('/<img alt=".*?" border="0" align="absmiddle" src="(http\:\/\/pics\.taobaocdn\.com.*?)" title="(.*?)">/', $this->curl->response, $matches)){
+            $this->collector->auth_img_src   = $matches[1];		//
+            $this->collector->auth_title 	 = $matches[2];
+        }
+
+
+
+        //è·å–æ˜¯å¦æ˜¯å–å®¶
+        if(preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
+            $this->collector->is_seller = collector_enum::IS_SELLER;
+            $this->collector->shop = new stdClass();
+            $this->collector->shop->shop_id   = $matches[1];
+
+            //è·å–å–å®¶å¥½è¯„ç‡
+            if(preg_match('/<em style="color:gray;">.*?\b([0-9\.]+)%<\/em>/', $this->curl->response, $matches)){
+                $this->collector->rate = $matches[1];
+            }
+            //è·å–åˆ›åº—æ—¶é—´
+            if(preg_match('/<input type="hidden" name="shopStartDate" id="J_showShopStartDate" value="([0-9\-]+)" \/>/', $this->curl->response, $matches)){
+                $this->collector->shop->start_date   = $matches[1];
+            }
+            //è·å–å¼€åº—å¤©æ•°
+            if(preg_match('/<input type="hidden" name="shopBetween" id="J_showShopBetween" value="(\d+)" \/>/', $this->curl->response, $matches)){
+                $this->collector->shop->start_days   = $matches[1];
+            }
+            //è·å–åº—é“ºURLå’Œåº—é“ºå
+            if(preg_match('/<a class="shop\-name" href="(.*?)">\s+<span title="(.*?)">.*?<\/span>/', $this->curl->response, $matches)){
+                $this->collector->shop->shop_name = $matches[2];
+                $this->collector->shop->shop_url  = $matches[1];
+            }
+            //è·å–åº—é“ºæ”¶è—é“¾æ¥
+            if(preg_match('/href="(http:\/\/favorite.taobao.com\/popup\/add_collection.htm.*?)"/', $this->curl->response, $matches)){
+                $this->collector->shop->favorite_url = $matches[1];
+            }
+
+        }else{
+            //è·å–ä¹°å®¶å¥½è¯„ç‡
+            if(preg_match('/<em class="gray">\b([0-9\.]+)%<\/em>/', $this->curl->response, $matches)){
+                $this->collector->rate = $matches[1];
+            }
+            $this->collector->is_buyer = collector_enum::IS_BUYER;
+
+        }
+
+
+        //è·å–ä¿¡ç”¨è®°å½•
+        if(preg_match_all('/<td class="rate\w{2,6}">(.*?)<\/td>/', $this->curl->response, $matches)){
+            $credits = strip_array_tag($matches[1]);
+            $this->collector->rank = $this->process_credit($credits);
+        }
+
+        echo $this->curl->response;
+        return $this;
+
+
+    }
 
 
     /**
-     * @param $user_name
-     * @param $result
-     * @return mixed
+     * å¤„ç†ç”¨æˆ·ä¿¡èª‰è¯¦æƒ…
+     * @param array $credits
+     * @return array
      */
-    protected  function start(){
-		//ÏÈ¸ù¾İÓÃ»§Ãû»ñÈ¡month_idºÍrate_url
-		$this->curl->get($this->get_user_id_api, array(
-			'username'	=>	$this->collector->user_name
-		));
-		if(!$this->curl->response){
-			throw(new Excption('·şÎñÆ÷´íÎó'));
-		}
-		
-		//»ñÈ¡month_idºÍrate_url
-		if(preg_match('/http\:\/\/rate\.taobao\.com\/user\-rate\-(\w+)\.htm/', $this->curl->response, $matches)){
-			$this->collector->rate_url = $matches[0];
-			$this->collector->month_id = $matches[1];
-		}
-		
-		//ÔÙÇëÇórate_url
-		$this->curl->get($this->collector->rate_url);
-		//É¾³ı»»ĞĞ·û
-		$this->curl->response= str_replace(array("\r\n", "\r", "\n"), "", $this->curl->response);
-		//±àÂë×ª»»ÎªUTF-8
-		$this->curl->response = set_encode($this->curl->response, 'gbk', 'utf-8');
-		
-		//»ñÈ¡³¤IDºÍprofile_url
-		if(preg_match('/http\:\/\/member1\.taobao\.com\/member\/user-profile-([0-9a-z]{32})\.htm/', $this->curl->response, $matches)){
-			$this->collector->profile_url = $matches[0];
-			$this->collector->long_id 	  = $matches[1];
-		}
-		
-		//»ñÈ¡ÈÏÖ¤Çé¿ö
-		if(preg_match('/<img alt=".*?" border="0" align="absmiddle" src="(http\:\/\/pics\.taobaocdn\.com.*?)" title="(.*?)">/', $this->curl->response, $matches)){
-			$this->collector->auth_img_src   = $matches[1];		//
-			$this->collector->auth_title 	 = $matches[2];
-		}
-		
-		
-		
-		//»ñÈ¡ÊÇ·ñÊÇÂô¼Ò
-		if(preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
-			$this->collector->is_seller = 1;
-			$this->collector->shop = new stdClass();
-			$this->collector->shop->shop_id   = $matches[1];
-			
-			//»ñÈ¡Âô¼ÒºÃÆÀÂÊ
-			if(preg_match('/<em style="color:gray;">.*?\b([0-9\.]+)%<\/em>/', $this->curl->response, $matches)){
-				$this->collector->rate = $matches[1];
-			}
-			//»ñÈ¡´´µêÊ±¼ä
-			if(preg_match('/<input type="hidden" name="shopStartDate" id="J_showShopStartDate" value="([0-9\-]+)" \/>/', $this->curl->response, $matches)){
-				$this->collector->shop->start_date   = $matches[1];
-			}
-			//»ñÈ¡¿ªµêÌìÊı
-			if(preg_match('/<input type="hidden" name="shopBetween" id="J_showShopBetween" value="(\d+)" \/>/', $this->curl->response, $matches)){
-				$this->collector->shop->start_days   = $matches[1];
-			}
-			//»ñÈ¡µêÆÌURLºÍµêÆÌÃû
-			if(preg_match('/<a class="shop\-name" href="(.*?)">\s+<span title="(.*?)">.*?<\/span>/', $this->curl->response, $matches)){
-				$this->collector->shop->shop_name = $matches[2];
-				$this->collector->shop->shop_url  = $matches[1];
-			}
-			//»ñÈ¡µêÆÌÊÕ²ØÁ´½Ó
-			if(preg_match('/href="(http:\/\/favorite.taobao.com\/popup\/add_collection.htm.*?)"/', $this->curl->response, $matches)){
-				$this->collector->shop->favorite_url = $matches[1];
-			}
-			
-		}else{
-			//»ñÈ¡Âò¼ÒºÃÆÀÂÊ
-			if(preg_match('/<em class="gray">.*?\b([0-9\.]+)%<\/em>/', $this->curl->response, $matches)){
-				$this->collector->rate = $matches[1];
-			}
-			$this->collector->is_buyer = 1;
-			
-		}
-		
-		
-		//»ñÈ¡ĞÅÓÃ¼ÇÂ¼
-		if(preg_match_all('/<td class="rate\w{2,6}">(.*?)<\/td>/', $this->curl->response, $matches)){
-			$credits = strip_array_tag($matches[1]);
-			$this->collector->credit = $this->process_credit($credits);
-		}
-		
-		echo $this->curl->response;
-		return $this;
-		
-		
-    }
-	
+    private function process_credit(array $credits){
 
-	private function process_credit(array $credits){
-	
-			//×ÜºÃÆÀÊı = ×î½ü°ëÄêºÃÆÀ + °ëÄêÇ°ºÃÆÀ
-			$credit['total_rate_ok'] = $credits[6]     +  $credits[9];
-			//×ÜÖĞÆÀÊı = ×î½ü°ëÄêÖĞÆÀ + °ëÄêÇ°ÖĞÆÀ
-			$credit['total_rate_normal'] = $credits[7] +  $credits[10];
-			//×Ü²îÆÀÊı = ×î½ü°ëÄê²îÆÀ + °ëÄêÇ°²îÆÀ
-			$credit['total_rate_bad'] = $credits[8] +  $credits[11];
-			//×ÜĞÅÓÃÖµ = ×ÜºÃÆÀÊı - ×Ü²îÆÀÊı
-			$credit['total_rate']	= $credit['total_rate_ok'] - $credit['total_rate_bad'];
-			//×î½üÒ»ÖÜ
-			$credit['detail']['week'] = array(
-				'rate_ok'	  =>	$credits[0],
-				'rate_normal' =>	$credits[1],
-				'rate_bad'	  =>	$credits[2],
-			);
-			//×î½üÒ»¸öÔÂ
-			$credit['detail']['month'] = array(
-				'rate_ok'	  =>	$credits[3],
-				'rate_normal' =>	$credits[4],
-				'rate_bad'	  =>	$credits[5],
-			);
-			//×î½ü°ëÄê
-			$credit['detail']['half_year'] = array(
-				'rate_ok'	  =>	$credits[6],
-				'rate_normal' =>	$credits[7],
-				'rate_bad'	  =>	$credits[8],
-			);
-			//°ëÄêÒÔÇ°
-			$credit['detail']['ago'] = array(
-				'rate_ok'	  =>	$credits[9],
-				'rate_normal' =>	$credits[10],
-				'rate_bad'	  =>	$credits[11],
-			);
-			
-			return $credit;
-	}
+        //æ€»å¥½è¯„æ•° = æœ€è¿‘åŠå¹´å¥½è¯„ + åŠå¹´å‰å¥½è¯„
+        $credit['total_rate_ok'] = $credits[6]     +  $credits[9];
+        //æ€»ä¸­è¯„æ•° = æœ€è¿‘åŠå¹´ä¸­è¯„ + åŠå¹´å‰ä¸­è¯„
+        $credit['total_rate_normal'] = $credits[7] +  $credits[10];
+        //æ€»å·®è¯„æ•° = æœ€è¿‘åŠå¹´å·®è¯„ + åŠå¹´å‰å·®è¯„
+        $credit['total_rate_bad'] = $credits[8] +  $credits[11];
+        //æ€»ä¿¡ç”¨å€¼ = æ€»å¥½è¯„æ•° - æ€»å·®è¯„æ•°
+        $credit['total_rate']	= $credit['total_rate_ok'] - $credit['total_rate_bad'];
+        //æœ€è¿‘ä¸€å‘¨
+        $credit['detail']['week'] = array(
+            'rate_ok'	  =>	$credits[0],
+            'rate_normal' =>	$credits[1],
+            'rate_bad'	  =>	$credits[2],
+        );
+        //æœ€è¿‘ä¸€ä¸ªæœˆ
+        $credit['detail']['month'] = array(
+            'rate_ok'	  =>	$credits[3],
+            'rate_normal' =>	$credits[4],
+            'rate_bad'	  =>	$credits[5],
+        );
+        //æœ€è¿‘åŠå¹´
+        $credit['detail']['half_year'] = array(
+            'rate_ok'	  =>	$credits[6],
+            'rate_normal' =>	$credits[7],
+            'rate_bad'	  =>	$credits[8],
+        );
+        //åŠå¹´ä»¥å‰
+        $credit['detail']['ago'] = array(
+            'rate_ok'	  =>	$credits[9],
+            'rate_normal' =>	$credits[10],
+            'rate_bad'	  =>	$credits[11],
+        );
+
+        return $credit;
+    }
 }
