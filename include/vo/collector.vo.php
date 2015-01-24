@@ -12,18 +12,18 @@ class collector_vo extends base_vo
     public $user_name;
     //用户名GBK编码
     public $user_name_gbk;
-    //是否卖家
-    public $is_seller = 0;
-    //是否买家
-    public $is_buyer = 0;
-    //是否天猫商家
-    public $is_tmall = 0;
     //user_id
     public $user_id;
     //month_id
     public $month_id;
     //long_id
     public $long_id;
+	//是否卖家
+    public $is_seller ;
+    //是否买家
+    public $is_buyer ;
+    //是否天猫商家
+    public $is_tmall ;
     //认证情况
     public $auth;
     //认证情况文字

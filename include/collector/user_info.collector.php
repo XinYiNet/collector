@@ -49,12 +49,12 @@ class user_info_collector extends base_collector {
         //编码转换为UTF-8
         $this->curl->response = set_encode($this->curl->response, 'gbk', 'utf-8');
 
-        //获取长ID和profile_url
+        //获取长ID和profile_url(天猫店铺暂无)
         if(preg_match('/http\:\/\/member1\.taobao\.com\/member\/user-profile-([0-9a-z]{32})\.htm/', $this->curl->response, $matches)){
             $this->collector->profile_url = $matches[0];
             $this->collector->long_id 	  = $matches[1];
         }
-
+		
         //获取认证情况
         if(preg_match('/<img alt=".*?" border="0" align="absmiddle" src="(http\:\/\/pics\.taobaocdn\.com.*?)" title="(.*?)">/', $this->curl->response, $matches)){
             $this->collector->auth_img_src   = $matches[1];		//
@@ -66,11 +66,17 @@ class user_info_collector extends base_collector {
              if($matches[1] == 'true'){
 				 $this->collector->is_tmall   =   collector_enum::IS_TMALL;
                  $this->collector->is_seller  =   collector_enum::IS_SELLER;
-             }
-        }
+				 
+				 //获取user_id 
+				if(preg_match('/<input type="hidden" id="dsr-userid" value="(\d+)"\/>/', $this->curl->response, $matches)){
+					$this->collector->user_id = $matches[1];
 
-        //获取是否是卖家
-        if($this->collector->is_seller || preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
+				}
+             }
+		//是否是卖家
+        }
+		
+		if($this->collector->is_seller || preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
             $this->collector->is_seller = collector_enum::IS_SELLER;
             $this->collector->shop = new stdClass();
             $this->collector->shop->shop_id   = $matches[1];
@@ -96,7 +102,10 @@ class user_info_collector extends base_collector {
             if(preg_match('/href="(http:\/\/favorite.taobao.com\/popup\/add_collection.htm.*?)"/', $this->curl->response, $matches)){
                 $this->collector->shop->favorite_url = $matches[1];
             }
-
+			//获取user_id 
+			if(preg_match('/view_shop.htm?user_number_id=(\d+)\b/', $this->curl->response, $matches)){
+				$this->collector->user_id = $matches[1];
+			}
         }else{
             //获取买家好评率
             if(preg_match('/<em class="gray">\b([0-9\.]+)%<\/em>/', $this->curl->response, $matches)){

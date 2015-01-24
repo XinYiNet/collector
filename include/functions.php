@@ -68,3 +68,61 @@ function strip_array_tag(array $arr){
 	return $arr;
 }
 
+
+//jiequstr函数定义开始
+function jqstr($mubiaostr,$ksstr,$jsstr){
+	if($mubiaostr=='') return false;
+	if($ksstr==''){
+		$jiequks=0;return false;
+	}else{
+		$chucuo1=0;
+		$arr1=explode('(*)',$ksstr);
+		$len1=count($arr1);
+		$chaxunwz=0;
+		$feikongnum1=0;
+		for($i=0;$i<$len1;$i++){
+			if($arr1[$i]=='')continue;
+			$feikongnum1++;
+			if(($wz=strpos($mubiaostr,$arr1[$i],$chaxunwz))!==false)
+				$chaxunwz=$wz+strlen($arr1[$i]);
+			else {
+				$chucuo1=1;
+				return false;
+			}
+		}
+		if($chucuo1==1)$jiequks=0;
+
+		else $jiequks=$chaxunwz;
+	}
+	if($jsstr==''){
+		return false;
+	}else{
+		$chucuo2=0;
+		$arr2=explode('(*)',$jsstr);
+		$len2=count($arr2);
+		$chaxunwz=$jiequks;
+		$feikongnum2=0;
+		for($i=0;$i<$len2;$i++){
+			if($arr2[$i]=='')continue;
+			$feikongnum2++;
+			if(($wz=strpos($mubiaostr,$arr2[$i],$chaxunwz))!==false){
+				$chaxunwz=$wz+strlen($arr2[$i]);
+				if($feikongnum2==1)$enddian=$wz;
+	
+			}else {
+				$chucuo2=1;
+				return false;
+			}
+
+		}
+
+		if($chucuo2==1)$jiequjs=strlen($mubiaostr);
+
+		else $jiequjs=$enddian;
+
+	}
+	$jiequstr=substr($mubiaostr,$jiequks,$jiequjs-$jiequks);
+	return $jiequstr;
+}
+
+
