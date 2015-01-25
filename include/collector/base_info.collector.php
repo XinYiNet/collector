@@ -8,7 +8,7 @@
 /**
  * Class user_info_collector
  */
-class user_info_collector extends base_collector {
+class base_info_collector extends base_collector {
 
 
     private $get_user_id_api = 'www.dasoke.com/ajax/get/rate/';
