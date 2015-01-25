@@ -10,16 +10,20 @@ abstract class base_vo {
     const BOUND_MERGE   =   TRUE;
     const BOUN_ONLY     =   FALSE;
 
-    final public function __construct( &$args , $merge = self::BOUN_ONLY){
-
-        switch($merge){
-            case self::BOUN_ONLY    :
-                $this->vo_bound($args);
-                break;
-            case self::BOUND_MERGE  :
-                $this->merge_vo($args);
-                break;
+    final public function __construct( &$args = null , $merge = self::BOUN_ONLY){
+        if(is_null($args)){
+            return $this;
+        }else{
+            switch($merge){
+                case self::BOUN_ONLY    :
+                    $this->vo_bound($args);
+                    break;
+                case self::BOUND_MERGE  :
+                    $this->merge_vo($args);
+                    break;
+            }
         }
+
 
 
     }

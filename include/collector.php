@@ -37,13 +37,17 @@ final class collector {
      */
     public function __invoke($user_name){
 		$this->user_name = $user_name;
-		
-        foreach(self::$hooks as $class_name){
-            if(class_exists($class_name)){
-                $object = new $class_name;
-                $object($this);
+		try{
+            foreach(self::$hooks as $class_name){
+                if(class_exists($class_name)){
+                    $object = new $class_name;
+                    $object($this);
+                }
             }
+            Response::$data = $this;
+        }catch (Exception $e){
+            Response::$msg = $e->getMessage();
+            Response::$code = $e->getCode();
         }
-        return $this;
     }
 }

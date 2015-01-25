@@ -27,7 +27,7 @@ class user_info_collector extends base_collector {
             'username'	=>	$this->collector->user_name
         ));
         if(!$this->curl->response){
-            throw(new Exception('服务器错误'));
+            Response::error(response_enum::HTTP_FAIL);
         }
 
         //获取month_id和rate_url
@@ -40,7 +40,7 @@ class user_info_collector extends base_collector {
         $this->curl->get($this->collector->rate_url);
 
         if(!$this->curl->response){
-            throw(new Exception('抱歉，出问题了：'.$this->collector->rate_url) );
+            Response::error(1);
         }
 
         //删除换行符
