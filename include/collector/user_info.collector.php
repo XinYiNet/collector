@@ -20,7 +20,6 @@ class user_info_collector extends base_collector {
      * @return $this|mixed
      * @throws ErrorException
      * @throws Exception
-     * @throws Excption
      */
     protected  function start(){
         //先根据用户名获取month_id和rate_url
@@ -28,7 +27,7 @@ class user_info_collector extends base_collector {
             'username'	=>	$this->collector->user_name
         ));
         if(!$this->curl->response){
-            throw(new Excption('服务器错误'));
+            throw(new Exception('服务器错误'));
         }
 
         //获取month_id和rate_url
@@ -49,64 +48,59 @@ class user_info_collector extends base_collector {
         //编码转换为UTF-8
         $this->curl->response = set_encode($this->curl->response, 'gbk', 'utf-8');
 
-        //获取长ID和profile_url(天猫店铺暂无)
-        if(preg_match('/http\:\/\/member1\.taobao\.com\/member\/user-profile-([0-9a-z]{32})\.htm/', $this->curl->response, $matches)){
-            $this->collector->profile_url = $matches[0];
-            $this->collector->long_id 	  = $matches[1];
-        }
-		
+
         //获取认证情况
-        if(preg_match('/<img alt=".*?" border="0" align="absmiddle" src="(http\:\/\/pics\.taobaocdn\.com.*?)" title="(.*?)">/', $this->curl->response, $matches)){
-            $this->collector->auth_img_src   = $matches[1];		//
-            $this->collector->auth_title 	 = $matches[2];
+        if(preg_match('/<\s*img\s+alt="(.*?认证)"\s+[^>]*?src=\s*(\'|\")(.*?)\\2[^>]*?\/?\s*title="\\1">/i', $this->curl->response, $matches)){
+            $this->collector->auth_img        = $matches[3];		//认证标志图片
+            $this->collector->auth_title 	 = $matches[1];     //认证信息
+            $this->collector->auth             = collector_enum::$auth_title[$matches[1]];
         }
 
         //判断是否天猫商家
-        if(preg_match('/<input type="hidden" name="isB2C" id="isB2C" value="(\w+)" \/>/', $this->curl->response, $matches)){
-             if($matches[1] == 'true'){
+        if(preg_match('/<input type="hidden" name="isB2C" id="isB2C" value="(\w+)" \/>/', $this->curl->response, $matches)  && $matches[1] == 'true'){
+
 				 $this->collector->is_tmall   =   collector_enum::IS_TMALL;
                  $this->collector->is_seller  =   collector_enum::IS_SELLER;
 				 
 				 //获取user_id 
 				if(preg_match('/<input type="hidden" id="dsr-userid" value="(\d+)"\/>/', $this->curl->response, $matches)){
 					$this->collector->user_id = $matches[1];
-
 				}
-             }
-		//是否是卖家
-        }
-		
-		if($this->collector->is_seller || preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
-            $this->collector->is_seller = collector_enum::IS_SELLER;
-            $this->collector->shop = new stdClass();
-            $this->collector->shop->shop_id   = $matches[1];
+                //所在地区
+                if(preg_match('/<li>所在地区：(.*?)<\/li>/', $this->curl->response, $matches)) {
+                    $this->collector->address = trim($matches[1]);
+                }
+                //获取店铺ID
+                if(preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
+                    $this->collector->shop['shop_id']   =   $matches[1];
+                }
+                //获取店铺URL和店铺名以及long_id
+                if(preg_match('/<a href="(http:\/\/[0-9a-z\.\/\-]+view_shop-(\w{32}).htm)" target="_blank">(.*?)<\/a>/', $this->curl->response, $matches)){
+                    $this->collector->long_id               = $matches[2];
+                    $this->collector->shop['shop_name']    = $matches[3];
+                    $this->collector->shop['shop_url']     = $matches[1];
+                }
+        //是否卖家
+        }elseif($this->collector->is_seller || preg_match('/<input type="hidden" name="shopIdHidden" id="J_ShopIdHidden" value="(\d+)" \/>/', $this->curl->response, $matches)){
 
+            $this->collector->is_seller = collector_enum::IS_SELLER;
+            $this->collector->shop['shop_id']   =   $matches[1];
+            //获取user_id
+            if(preg_match('/view_shop.htm?user_number_id=(\d+)\b/', $this->curl->response, $matches)){
+                $this->collector->user_id = $matches[1];
+            }
             //获取卖家好评率
             if(preg_match('/<em style="color:gray;">.*?\b([0-9\.]+)%<\/em>/', $this->curl->response, $matches)){
-                $this->collector->rate = $matches[1];
-            }
-            //获取创店时间
-            if(preg_match('/<input type="hidden" name="shopStartDate" id="J_showShopStartDate" value="([0-9\-]+)" \/>/', $this->curl->response, $matches)){
-                $this->collector->shop->start_date   = $matches[1];
-            }
-            //获取开店天数
-            if(preg_match('/<input type="hidden" name="shopBetween" id="J_showShopBetween" value="(\d+)" \/>/', $this->curl->response, $matches)){
-                $this->collector->shop->start_days   = $matches[1];
+                $this->collector->rank['seller_rate'] = $matches[1];
             }
             //获取店铺URL和店铺名
-            if(preg_match('/<a class="shop\-name" href="(.*?)">\s+<span title="(.*?)">.*?<\/span>/', $this->curl->response, $matches)){
-                $this->collector->shop->shop_name = $matches[2];
-                $this->collector->shop->shop_url  = $matches[1];
+            if(preg_match('/<a class="shop\-name" href="(http:\/\/.*?)"\s*>(.*?)<\/a>/', $this->curl->response, $matches)){
+                $this->collector->shop['shop_name'] = trim(strip_tags($matches[2]));
+                $this->collector->shop['shop_url']  = $matches[1];
             }
-            //获取店铺收藏链接
-            if(preg_match('/href="(http:\/\/favorite.taobao.com\/popup\/add_collection.htm.*?)"/', $this->curl->response, $matches)){
-                $this->collector->shop->favorite_url = $matches[1];
-            }
-			//获取user_id 
-			if(preg_match('/view_shop.htm?user_number_id=(\d+)\b/', $this->curl->response, $matches)){
-				$this->collector->user_id = $matches[1];
-			}
+        //买家信息
         }else{
+
             //获取买家好评率
             if(preg_match('/<em class="gray">\b([0-9\.]+)%<\/em>/', $this->curl->response, $matches)){
                 $this->collector->rate = $matches[1];
@@ -114,18 +108,41 @@ class user_info_collector extends base_collector {
             $this->collector->is_buyer = collector_enum::IS_BUYER;
 
         }
+        //卖家和天猫
+        if($this->collector->is_seller === collector_enum::IS_SELLER){
 
+            //获取创店时间
+            if(preg_match('/<input type="hidden" name="shopStartDate" id="J_showShopStartDate" value="([0-9\-]+)" \/>/', $this->curl->response, $matches)){
+                $this->collector->shop['start_date']   = $matches[1];
+                $this->collector->shop['start_timestamp'] = strtotime($matches[1]);
+            }
 
-        //获取信用记录
-        if(preg_match_all('/<td class="rate\w{2,6}">(.*?)<\/td>/', $this->curl->response, $matches)){
-            $credits = strip_array_tag($matches[1]);
-            $this->collector->rank = $this->process_credit($credits);
+            //获取店铺收藏链接
+            if(preg_match('/href="(http:\/\/favorite.taobao.com\/popup\/add_collection.htm.*?)"/', $this->curl->response, $matches)){
+                $this->collector->shop['favorite_url'] = $matches[1];
+            }
         }
+        //不是天猫店
+        if($this->collector->is_tmall !== collector_enum::IS_TMALL){
+            //获取信用记录
+            if(preg_match_all('/<td class="rate\w{2,6}">(.*?)<\/td>/', $this->curl->response, $matches)){
+                $credits = strip_array_tag($matches[1]);
+                $this->collector->rank = $this->process_credit($credits);
+            }
+            //获取所在地区
+            if(preg_match('/<dt>所在地区：<\/dt>\s*<dd>(.*?)<\/dd>/', $this->curl->response, $matches)){
+                $address = strip_tags($matches[1]);
+                $this->collector->address =trim($address);
+            }
+            //获取长ID和profile_url
+            if(preg_match('/http\:\/\/member1\.taobao\.com\/member\/user-profile-([0-9a-z]{32})\.htm/', $this->curl->response, $matches)){
+                $this->collector->profile_url = $matches[0];
+                $this->collector->long_id 	  = $matches[1];
+            }
 
-        echo $this->curl->response;
+
+        }
         return $this;
-
-
     }
 
 
@@ -143,7 +160,12 @@ class user_info_collector extends base_collector {
         //总差评数 = 最近半年差评 + 半年前差评
         $credit['total_rate_bad'] = $credits[8] +  $credits[11];
         //总信用值 = 总好评数 - 总差评数
-        $credit['total_rate']	= $credit['total_rate_ok'] - $credit['total_rate_bad'];
+        if($this->collector->is_seller == collector_enum::IS_SELLER){
+            $credit['seller_rank']	= $credit['total_rate_ok'] - $credit['total_rate_bad'];
+        }else{
+            $credit['buyer_rank']	= $credit['total_rate_ok'] - $credit['total_rate_bad'];
+        }
+
         //最近一周
         $credit['detail']['week'] = array(
             'rate_ok'	  =>	$credits[0],

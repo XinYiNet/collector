@@ -15,7 +15,7 @@ final class collector {
 	public $user_name;
 
     public function __construct(){
-         new collector_vo($this, base_vo::BOUND_MERGE);
+         //new collector_vo($this, base_vo::BOUND_MERGE);
     }
 
     /**

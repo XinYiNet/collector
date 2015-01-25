@@ -19,11 +19,11 @@ class collector_vo extends base_vo
     //long_id
     public $long_id;
 	//是否卖家
-    public $is_seller ;
+    public $is_seller   =   0;
     //是否买家
-    public $is_buyer ;
+    public $is_buyer    =   0;
     //是否天猫商家
-    public $is_tmall ;
+    public $is_tmall    =   0;
     //认证情况
     public $auth;
     //认证情况文字
@@ -36,17 +36,20 @@ class collector_vo extends base_vo
     public $profile_url;
     //所在地区
     public $address;
-    //买家信用
-    public $buyer_rank;
-    //买家好评率
-    public $buyer_rate;
     //注册时间
     public $register_date;
     //上次登录时间
     public $last_login_time;
-
     //信用情况
     public $rank = array(
+        //买家好评率
+        'buyer_rate'   => null,
+        //买家信用值
+        'buyer_rank'   => null,
+        //卖家好评率
+        'seller_rate' => null,
+        //卖家信用值
+        'seller_rank' => null,
         //总好评数
         'rate_ok'       =>  null,
         //总中评数
@@ -84,10 +87,7 @@ class collector_vo extends base_vo
 
     //以下是淘宝卖家信息
 
-    //卖家信用
-    public $seller_rank = null;
-    //卖家好评率
-    public $seller_rate = null;
+
 
     //店铺信息
     public $shop = array(
