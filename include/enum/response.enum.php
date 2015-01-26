@@ -15,6 +15,9 @@ class response_enum {
     const ACCOUNT_INCORRECT = 2001;
     //账号不存在
     const ACCOUNT_NOT_EXIST = 2002;
+    public static $msg = array(
+        self::OK => 'success'
+    );
 
 
 

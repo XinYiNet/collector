@@ -26,6 +26,7 @@ class base_info_collector extends base_collector {
         $this->curl->get($this->get_user_id_api, array(
             'username'	=>	$this->collector->user_name
         ));
+        print_r($this->collector);
         if(!$this->curl->response){
             Response::error(response_enum::HTTP_FAIL);
         }
@@ -40,7 +41,7 @@ class base_info_collector extends base_collector {
         $this->curl->get($this->collector->rate_url);
 
         if(!$this->curl->response){
-            Response::error(1);
+            Response::error(1001);
         }
 
         //删除换行符
